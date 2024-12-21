@@ -100,9 +100,26 @@ public class ClientRestController {
     }
 
     @DeleteMapping("/clients/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    void deleteById(@PathVariable Long id) {
-        clientService.delete(id);
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
+
+        Client clientDelete = clientService.findById(id);
+
+        if (clientDelete == null) {
+            response.put("mensaje", "Error: No se pudo eliminar, el cliente ID: ".concat(id.toString().concat(" no existe en la base de datos")));
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+
+        try {
+            clientService.delete(id);
+        } catch (DataAccessException e) {
+            response.put("mensaje", "Error al eliminar al cliente en la base de datos");
+            response.put("error", e.getMessage().concat(": ").concat(e.getMostSpecificCause().getMessage()));
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        response.put("mensaje", "El cliente fue eliminando con éxito!");
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
 }
