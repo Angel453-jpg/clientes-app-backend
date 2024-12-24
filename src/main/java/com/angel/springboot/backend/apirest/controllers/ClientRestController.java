@@ -2,14 +2,17 @@ package com.angel.springboot.backend.apirest.controllers;
 
 import com.angel.springboot.backend.apirest.models.Client;
 import com.angel.springboot.backend.apirest.services.IClientService;
+import jakarta.validation.Valid;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = {"http://localhost:4200"})
 @RestController
@@ -42,17 +45,26 @@ public class ClientRestController {
         }
 
         if (client == null) {
-            response.put("mensaje", "El cliente ID: ".concat(id.toString().concat(" no existe en la base de datos!")));
+            response.put("mensaje", "El cliente con ID: ".concat(id.toString().concat(" no existe en la base de datos!")));
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(client, HttpStatus.OK);
     }
 
     @PostMapping("/clients")
-    public ResponseEntity<?> create(@RequestBody Client client) {
+    public ResponseEntity<?> create(@Valid @RequestBody Client client, BindingResult result) {
 
         Client clientNew;
         Map<String, Object> response = new HashMap<>();
+
+        if (result.hasErrors()) {
+            List<String> errors = result.getFieldErrors()
+                    .stream()
+                    .map(err -> "El campo '" + err.getField() + "' " + err.getDefaultMessage())
+                    .collect(Collectors.toList());
+            response.put("errors", errors);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
 
         try {
             clientNew = clientService.save(client);
@@ -68,15 +80,24 @@ public class ClientRestController {
     }
 
     @PutMapping("/clients/{id}")
-    public ResponseEntity<?> update(@RequestBody Client client, @PathVariable Long id) {
+    public ResponseEntity<?> update(@Valid @RequestBody Client client, BindingResult bindingResult, @PathVariable Long id) {
 
         Client clienteActual = clientService.findById(id);
         Client clienteUpdated;
 
         Map<String, Object> response = new HashMap<>();
 
+        if (bindingResult.hasErrors()) {
+            List<String> errors = bindingResult.getFieldErrors()
+                    .stream()
+                    .map(err -> "El campo '" + err.getField() + "' " + err.getDefaultMessage())
+                    .collect(Collectors.toList());
+            response.put("errors", errors);
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
         if (clienteActual == null) {
-            response.put("mensaje", "Error: No se pudo editar, el cliente ID: ".concat(id.toString().concat(" no existe en la base de datos!")));
+            response.put("mensaje", "Error: No se pudo editar, el cliente con ID: ".concat(id.toString().concat(" no existe en la base de datos!")));
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 
@@ -106,7 +127,7 @@ public class ClientRestController {
         Client clientDelete = clientService.findById(id);
 
         if (clientDelete == null) {
-            response.put("mensaje", "Error: No se pudo eliminar, el cliente ID: ".concat(id.toString().concat(" no existe en la base de datos")));
+            response.put("mensaje", "Error: No se pudo eliminar, el cliente con ID: ".concat(id.toString().concat(" no existe en la base de datos")));
             return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
         }
 

@@ -1,6 +1,9 @@
 package com.angel.springboot.backend.apirest.models;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.Date;
 
@@ -12,11 +15,16 @@ public class Client {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "no puede ser vació")
+    @Size(min = 5, max = 18, message = "el tamaño tiene que estar entre 5 y 12")
     @Column(nullable = false)
     private String name;
 
+    @NotBlank(message = "no puede ser vació")
     private String lastName;
 
+    @NotBlank(message = "no puede ser vació")
+    @Email(message = "no es una dirección de correo bien formada")
     @Column(nullable = false, unique = true)
     private String email;
 
