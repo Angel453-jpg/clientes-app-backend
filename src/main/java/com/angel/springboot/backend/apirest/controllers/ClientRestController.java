@@ -4,6 +4,9 @@ import com.angel.springboot.backend.apirest.models.Client;
 import com.angel.springboot.backend.apirest.services.IClientService;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -28,6 +31,12 @@ public class ClientRestController {
     @GetMapping("/clients")
     public List<Client> index() {
         return clientService.findAll();
+    }
+
+    @GetMapping("/clients/page/{page}")
+    public Page<Client> page(@PathVariable Integer page) {
+        Pageable pageable = PageRequest.of(page, 2);
+        return clientService.findAll(pageable);
     }
 
     @GetMapping("/clients/{id}")
