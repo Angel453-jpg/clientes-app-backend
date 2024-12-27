@@ -3,6 +3,7 @@ package com.angel.springboot.backend.apirest.models;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.Date;
@@ -28,14 +29,10 @@ public class Client {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @NotNull(message = "no puede estar vació")
     @Column(name = "create_at")
     @Temporal(TemporalType.DATE)
     private Date createAt;
-
-    @PrePersist
-    public void prePersist() {
-        createAt = new Date();
-    }
 
     public Long getId() {
         return id;
