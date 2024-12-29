@@ -2,11 +2,9 @@ package com.angel.springboot.backend.apirest.controllers;
 
 import com.angel.springboot.backend.apirest.models.Client;
 import com.angel.springboot.backend.apirest.services.IClientService;
+import com.angel.springboot.backend.apirest.services.IUploadFileService;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,16 +16,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @CrossOrigin(origins = {"http://localhost:4200"})
@@ -36,10 +29,11 @@ import java.util.stream.Collectors;
 public class ClientRestController {
 
     private final IClientService clientService;
-    private final Logger log = LoggerFactory.getLogger(ClientRestController.class);
+    private final IUploadFileService uploadFileService;
 
-    public ClientRestController(IClientService clientService) {
+    public ClientRestController(IClientService clientService, IUploadFileService uploadFileService) {
         this.clientService = clientService;
+        this.uploadFileService = uploadFileService;
     }
 
     @GetMapping("/clients")
@@ -159,19 +153,7 @@ public class ClientRestController {
             Client client = clientService.findById(id);
             String nombreFotoAnterior = client.getFoto();
 
-            if (nombreFotoAnterior != null && !nombreFotoAnterior.isEmpty()) {
-                Path rutaFotoAnterior = Paths.get("uploads").resolve(nombreFotoAnterior).toAbsolutePath();
-                File archivoFotoAnterior = rutaFotoAnterior.toFile();
-
-                if (archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
-                    if (archivoFotoAnterior.delete()) {
-                        System.out.println("Archivo eliminado correctamente.");
-                    } else {
-                        System.out.println("No se pudo eliminar el archivo.");
-                    }
-                }
-            }
-
+            uploadFileService.delete(nombreFotoAnterior);
             clientService.delete(id);
 
         } catch (DataAccessException e) {
@@ -191,33 +173,19 @@ public class ClientRestController {
         Client client = clientService.findById(id);
 
         if (!archivo.isEmpty()) {
-            Path uploadsDirectory = Paths.get("uploads");
-            String nombreArchivo = UUID.randomUUID() + "_" + archivo.getOriginalFilename().replace(" ", " ");
-            Path rutaArchivo = uploadsDirectory.resolve(nombreArchivo).toAbsolutePath();
-            log.info(rutaArchivo.toString());
+
+            String nombreArchivo;
 
             try {
-                Files.copy(archivo.getInputStream(), rutaArchivo);
+                nombreArchivo = uploadFileService.copy(archivo);
             } catch (IOException e) {
-                response.put("mensaje", "Error al subir la imagen del cliente " + nombreArchivo);
+                response.put("mensaje", "Error al subir la imagen del cliente");
                 response.put("error", e.getMessage().concat(": ").concat(e.getCause().getMessage()));
                 return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
             }
 
             String nombreFotoAnterior = client.getFoto();
-
-            if (nombreFotoAnterior != null && !nombreFotoAnterior.isEmpty()) {
-                Path rutaFotoAnterior = uploadsDirectory.resolve(nombreFotoAnterior).toAbsolutePath();
-                File archivoFotoAnterior = rutaFotoAnterior.toFile();
-
-                if (archivoFotoAnterior.exists() && archivoFotoAnterior.canRead()) {
-                    if (archivoFotoAnterior.delete()) {
-                        System.out.println("Archivo eliminado correctamente.");
-                    } else {
-                        System.out.println("No se pudo eliminar el archivo.");
-                    }
-                }
-            }
+            uploadFileService.delete(nombreFotoAnterior);
 
             client.setFoto(nombreArchivo);
             clientService.save(client);
@@ -233,18 +201,12 @@ public class ClientRestController {
     @GetMapping("/uploads/img/{namePicture:.+}")
     public ResponseEntity<Resource> showPicture(@PathVariable String namePicture) {
 
-        Path rutaArchivo = Paths.get("uploads").resolve(namePicture).toAbsolutePath();
-        log.info(rutaArchivo.toString());
         Resource resource;
 
         try {
-            resource = new UrlResource(rutaArchivo.toUri());
+            resource = uploadFileService.load(namePicture);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
-        }
-
-        if (!resource.exists() && !resource.isReadable()) {
-            throw new RuntimeException("Error no se pudo cargar la imagen: " + namePicture);
         }
 
         HttpHeaders header = new HttpHeaders();
