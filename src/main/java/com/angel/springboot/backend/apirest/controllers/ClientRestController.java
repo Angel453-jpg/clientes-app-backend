@@ -1,6 +1,7 @@
 package com.angel.springboot.backend.apirest.controllers;
 
 import com.angel.springboot.backend.apirest.models.Client;
+import com.angel.springboot.backend.apirest.models.Region;
 import com.angel.springboot.backend.apirest.services.IClientService;
 import com.angel.springboot.backend.apirest.services.IUploadFileService;
 import jakarta.validation.Valid;
@@ -123,6 +124,7 @@ public class ClientRestController {
             clienteActual.setLastName(client.getLastName());
             clienteActual.setEmail(client.getEmail());
             clienteActual.setCreateAt(client.getCreateAt());
+            clienteActual.setRegion(client.getRegion());
             clienteUpdated = clientService.save(clienteActual);
 
         } catch (DataAccessException e) {
@@ -213,6 +215,11 @@ public class ClientRestController {
         header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"");
 
         return new ResponseEntity<>(resource, header, HttpStatus.OK);
+    }
+
+    @GetMapping("/clients/regions")
+    public List<Region> regionList() {
+        return clientService.findAllRegions();
     }
 
 }

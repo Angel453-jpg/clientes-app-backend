@@ -1,6 +1,7 @@
 package com.angel.springboot.backend.apirest.services;
 
 import com.angel.springboot.backend.apirest.models.Client;
+import com.angel.springboot.backend.apirest.models.Region;
 import com.angel.springboot.backend.apirest.repositories.IClientDao;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,5 +47,11 @@ public class ClientServiceImpl implements IClientService {
     @Transactional
     public void delete(Long id) {
         clientDao.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Region> findAllRegions() {
+        return clientDao.findAllRegiones();
     }
 }
