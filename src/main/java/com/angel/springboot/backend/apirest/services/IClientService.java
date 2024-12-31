@@ -1,6 +1,7 @@
 package com.angel.springboot.backend.apirest.services;
 
 import com.angel.springboot.backend.apirest.models.Client;
+import com.angel.springboot.backend.apirest.models.Region;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -17,5 +18,7 @@ public interface IClientService {
     Client save(Client client);
 
     void delete(Long id);
+
+    List<Region> findAllRegions();
 
 }
